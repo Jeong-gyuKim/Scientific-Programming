@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 ################################################################
 #input parameter
 l,d = 1,1
-n_list = (10**np.arange(1,6,0.1)).astype(int)
+n_list = (10**np.arange(1,5,0.1)).astype(int)#(10**np.arange(1,6,0.1)).astype(int)
 
 ################################################################
 #calculate error
@@ -35,7 +35,7 @@ plt.ylabel("Error")
 plt.legend()
 plt.loglog()
 
-plt.savefig("Figure_1.png")
+plt.savefig("buffon/Figure_1.png")
 
 #Figure_2
 plt.figure()
@@ -47,4 +47,4 @@ plt.xlabel("log(# of throws)")
 plt.ylabel("Estimated Pi")
 
 plt.legend()
-plt.savefig("Figure_2.png")
+plt.savefig("buffon/Figure_2.png")
