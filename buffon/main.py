@@ -35,7 +35,7 @@ plt.ylabel("Error")
 plt.legend()
 plt.loglog()
 
-plt.savefig("buffon/Figure_1.png")
+plt.savefig("Figure_1.png")
 
 #Figure_2
 plt.figure()
@@ -47,4 +47,4 @@ plt.xlabel("log(# of throws)")
 plt.ylabel("Estimated Pi")
 
 plt.legend()
-plt.savefig("buffon/Figure_2.png")
+plt.savefig("Figure_2.png")

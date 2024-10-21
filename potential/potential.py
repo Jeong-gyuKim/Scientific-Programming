@@ -35,7 +35,7 @@ class particle:
     #     self.x, self.y, self.z = x,y,z
             
 ################################################################
-#ref. by physics
+#ref. by physics CDF
 """
  By helmholtz theorem, The vector can be uniquly define 
 when the curl, divergence, and boundary condition are given.
@@ -100,7 +100,7 @@ def prob(a,b):
     return f(a)-f(b)
 
 ################################################################
-#function define
+#function define WOS
 
 #sph->cart coord. transform function
 def sphere2cartesian(r,theta, phi):
@@ -129,6 +129,11 @@ def binning(x, len=10, dx=1):
     if x >= len:
         x = len - 1
     return int(x)
+################################################################
+#function define WOP
+def invCDF(u):
+    return np.sqrt((1/(1-u))**2 -1)
+
 ################################################################
 #test code
 
@@ -162,9 +167,9 @@ n = 125
 len = n
 dx = l/n
 
-plt.figure(facecolor="#F0F0F0")
+plt.figure(facecolor="#F0F0F0", dpi=500)
 
-#sim
+#WOS
 arr = np.zeros(len)
 x = np.array([i*dx for i in range(len)])
 for _ in range(N):
@@ -172,19 +177,32 @@ for _ in range(N):
     r = binning(r,len,dx)
     arr[r] += 1
 darr = np.sqrt(arr)
-print(f"is empty bin exist?: {0 in arr}\n" ,arr)
+#print(f"is empty bin exist?: {0 in arr}\n" ,arr)
 
 
-plt.errorbar(x,arr,darr, 0.5*dx*np.ones_like(x), 
-             alpha=.75, fmt="None", capsize=3, capthick=1,
-             label='sim')
+plt.errorbar(x[:-1],arr[:-1],darr[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
+             alpha=.75, fmt="None", capsize=2, capthick=1,
+             label='WOS')
 
-#real
+#WOP
+arr = np.zeros(len)
+x = np.array([i*dx for i in range(len)])
+for _ in range(N):
+    r = invCDF(np.random.rand())
+    r = binning(r,len,dx)
+    arr[r] += 1
+darr = np.sqrt(arr)
+#print(f"is empty bin exist?: {0 in arr}\n" ,arr)
+
+
+plt.errorbar(x[:-1],arr[:-1],darr[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
+             alpha=.75, fmt="None", capsize=2, capthick=1,
+             label='WOP', color='g')
+
+#PDF
 range = np.linspace(0,len*dx, 5000)
 real = np.array([prob(i,i+dx) for i in range])
-mark = range>x[-1]
-real[mark] = prob(range[mark],np.inf)
-plt.plot(range,real*N, label='real', color='r', linestyle='dashed')
+plt.plot(range,real*N, label='CDF', color='r', linestyle='dashed')
 
 #plot
 plt.legend()
