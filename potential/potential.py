@@ -202,7 +202,7 @@ plt.errorbar(x[:-1],arr[:-1],darr[:-1],# 0.5*dx*np.ones_like(x[:-1]),
 #PDF
 range = np.linspace(0,len*dx, 5000)
 real = np.array([prob(i,i+dx) for i in range])
-plt.plot(range,real*N, label='CDF', color='r', linestyle='dashed')
+plt.plot(range,real*N, label='PDF', color='r', linestyle='dashed')
 
 #plot
 plt.legend()
