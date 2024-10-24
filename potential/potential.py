@@ -8,6 +8,7 @@ Author          :Jeong-gyu, Kim
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 
 #def class
 class particle:
@@ -104,14 +105,14 @@ def prob(a,b):
 
 #sph->cart coord. transform function
 def sphere2cartesian(r,theta, phi):
-    x = r*np.cos(phi)*np.cos(theta)
-    y = r*np.cos(phi)*np.sin(theta)
-    z = r*np.sin(phi)
+    x = r*np.sin(phi)*np.cos(theta)
+    y = r*np.sin(phi)*np.sin(theta)
+    z = r*np.cos(phi)
     return x, y, z
 
 #sample diffusion process
 def unit_sphere_sample(r=1):
-    phi = np.arcsin(2*np.random.rand()-1)
+    phi = np.arccos(2*np.random.rand()-1)
     theta = 2*np.pi*np.random.rand()
     return sphere2cartesian(r,theta, phi)
 
@@ -145,6 +146,10 @@ def plot3d(X,Y,Z, xlabel='', ylabel='', zlabel=''):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
+    
+    ax.set_xlim(-1.25,1.25)
+    ax.set_ylim(-1.25,1.25)
+    ax.set_zlim(-1,1)
     plt.show()
 
 #for see the uniform sampling
@@ -158,55 +163,68 @@ def test_uniform_sphere_sample(f):
     plot3d(X,Y,Z,
         xlabel='X Label',ylabel='Y Label', zlabel='Z Label')
 
+#test_uniform_sphere_sample(unit_sphere_sample)
 ################################################################
 #main
-N = 10000
+N = 50000
 l = 25
 n = 125
 
 len = n
 dx = l/n
 
-plt.figure(facecolor="#F0F0F0", dpi=500)
+f, ax = plt.subplots(1, facecolor="#F0F0F0", dpi=500)
 
 #WOS
-arr = np.zeros(len)
+arr1 = np.zeros(len)
 x = np.array([i*dx for i in range(len)])
 for _ in range(N):
     r = get_r(1e-6)
     r = binning(r,len,dx)
-    arr[r] += 1
-darr = np.sqrt(arr)
+    arr1[r] += 1
+darr1 = np.sqrt(arr1)
 #print(f"is empty bin exist?: {0 in arr}\n" ,arr)
-
-
-plt.errorbar(x[:-1],arr[:-1],darr[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
+ax.errorbar(x[:-1],arr1[:-1],darr1[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
              alpha=.75, fmt="None", capsize=2, capthick=1,
              label='WOS')
 
 #WOP
-arr = np.zeros(len)
+arr2 = np.zeros(len)
 x = np.array([i*dx for i in range(len)])
 for _ in range(N):
     r = invCDF(np.random.rand())
     r = binning(r,len,dx)
-    arr[r] += 1
-darr = np.sqrt(arr)
+    arr2[r] += 1
+darr2 = np.sqrt(arr2)
 #print(f"is empty bin exist?: {0 in arr}\n" ,arr)
-
-
-plt.errorbar(x[:-1],arr[:-1],darr[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
+ax.errorbar(x[:-1],arr2[:-1],darr2[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
              alpha=.75, fmt="None", capsize=2, capthick=1,
              label='WOP', color='g')
 
 #PDF
-range = np.linspace(0,len*dx, 5000)
+range = np.linspace(0,l, 5000)
 real = np.array([prob(i,i+dx) for i in range])
-plt.plot(range,real*N, label='PDF', color='r', linestyle='dashed')
+ax.plot(range,real*N, label='PDF', color='r', linestyle='dashed')
+
+#Zoom
+axins = zoomed_inset_axes(ax, zoom=5, loc='right', borderpad = 1.0)
+axins.errorbar(x[:-1],arr1[:-1],darr1[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
+             alpha=.75, fmt="None", capsize=2, capthick=1,
+             label='WOS')
+axins.errorbar(x[:-1],arr2[:-1],darr2[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
+             alpha=.75, fmt="None", capsize=2, capthick=1,
+             label='WOP', color='g')
+axins.plot(range,real*N, label='PDF', color='r', linestyle='dashed')
+
+for s in ['top', 'bottom', 'left', 'right']:
+    axins.spines[s].set(color='grey', lw=1, linestyle='solid')
+x_1, x_2 = 4.5, 6.0
+axins.set(xlim=[min(x_1,x_2), max(x_1,x_2)], ylim=[min(prob(x_1,x_1+dx)*N, prob(x_2,x_2+dx)*N), max(prob(x_1,x_1+dx)*N, prob(x_2,x_2+dx)*N)])
+mark_inset(ax, axins, loc1=2, loc2=4, fc='none', ec='gray')
 
 #plot
-plt.legend()
-plt.title(f"charge distribution\n#N = {N}")
-plt.xlabel("radius")
-plt.ylabel("counts[#]")
+ax.legend()
+ax.set(xlabel="radius", 
+       ylabel="counts[#]", 
+       title = f"charge distribution\n#N = {N}")
 plt.savefig("Figure_3.png")
