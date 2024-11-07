@@ -2,25 +2,24 @@
 Project Name    :Scientific Programming HW
 
 File Name       :potential.py
-Date            :2024.10.16
+Date            :2024.11.07
 Author          :Jeong-gyu, Kim
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
+import pandas as pd
+
+N = 5000 #MC step
+l = 25 #total radius to concern
+n = 125 #bin number
 
 #def class
 class particle:
     #def init condition
-    def __init__(self, epsilon=1e-6, x=0,y=0,z=1) -> None:
-        self.epsilon = epsilon
-        
-        self.x, self.y, self.z = x,y,z
-        if z < epsilon:
-            self.passage = True
-        else:
-            self.passage = False
+    def __init__(self):
+        self.epsilon = 1e-6
+        self.passage = False
+        self.x, self.y, self.z = 0,0,1
     
     #def add
     def __add__(self, tuple):
@@ -31,10 +30,21 @@ class particle:
             self.passage = True
         
         return self
-    
-    # def set_pos(self, x,y,z):
-    #     self.x, self.y, self.z = x,y,z
-            
+
+def rand():
+    return np.random.rand()
+
+def sampling(f,N,l,n):
+    arr = np.zeros(n)
+    for _ in range(N):
+        r = f()
+        r = binning(r,n,l/n)
+        arr[r] += 1
+    return arr
+
+def get_real(x):
+    arr = [prob(x[i],x[i+1]) for i in range(len(x)-1)]
+    return arr
 ################################################################
 #ref. by physics CDF
 """
@@ -96,13 +106,13 @@ to make simple problem, WLOG d[m]=1[unit of length], -q[C]=1[unit of charge]
 then \frac{1}{(a^{2}+1)^{1/2}} - \frac{1}{(b^{2}+1)^{1/2}}
 """
 
+#probability between a to b
 def prob(a,b):
     f = lambda r:(1+r**2)**-0.5
     return f(a)-f(b)
 
 ################################################################
 #function define WOS
-
 #sph->cart coord. transform function
 def sphere2cartesian(r,theta, phi):
     x = r*np.sin(phi)*np.cos(theta)
@@ -117,114 +127,42 @@ def unit_sphere_sample(r=1):
     return sphere2cartesian(r,theta, phi)
 
 #do one particle sim.
-def get_r(epsilon=1e-6, x=0,y=0,z=1):
-    a = particle(epsilon, x,y,z)
+def get_wos():
+    a = particle()
     while not a.passage:
         a += unit_sphere_sample(a.z)
     r = np.sqrt(a.x**2+a.y**2)
     return r    
 
 #get bin index
-def binning(x, len=10, dx=1):
+def binning(x, n=10, dx=1):
     x = x//dx
-    if x >= len:
-        x = len - 1
+    if x >= n:
+        x = n - 1
     return int(x)
 ################################################################
 #function define WOP
-def invCDF(u):
-    return np.sqrt((1/(1-u))**2 -1)
-
-################################################################
-#test code
-
-#3D plot
-def plot3d(X,Y,Z, xlabel='', ylabel='', zlabel=''):
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.scatter(X,Y,Z)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_zlabel(zlabel)
-    
-    ax.set_xlim(-1.25,1.25)
-    ax.set_ylim(-1.25,1.25)
-    ax.set_zlim(-1,1)
-    plt.show()
-
-#for see the uniform sampling
-def test_uniform_sphere_sample(f):
-    X,Y,Z = [],[],[]
-    for _ in range(2000):
-        x,y,z = f()
-        X.append(x)
-        Y.append(y)
-        Z.append(z)
-    plot3d(X,Y,Z,
-        xlabel='X Label',ylabel='Y Label', zlabel='Z Label')
-
-#test_uniform_sphere_sample(unit_sphere_sample)
+def invCDF():
+    return np.sqrt((1/(1-rand()))**2 - 1)
 ################################################################
 #main
-N = 50000
-l = 25
-n = 125
+df = pd.DataFrame()
 
-len = n
-dx = l/n
-
-f, ax = plt.subplots(1, facecolor="#F0F0F0", dpi=500)
-
-#WOS
-arr1 = np.zeros(len)
-x = np.array([i*dx for i in range(len)])
-for _ in range(N):
-    r = get_r(1e-6)
-    r = binning(r,len,dx)
-    arr1[r] += 1
-darr1 = np.sqrt(arr1)
-#print(f"is empty bin exist?: {0 in arr}\n" ,arr)
-ax.errorbar(x[:-1],arr1[:-1],darr1[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
-             alpha=.75, fmt="None", capsize=2, capthick=1,
-             label='WOS')
-
-#WOP
-arr2 = np.zeros(len)
-x = np.array([i*dx for i in range(len)])
-for _ in range(N):
-    r = invCDF(np.random.rand())
-    r = binning(r,len,dx)
-    arr2[r] += 1
-darr2 = np.sqrt(arr2)
-#print(f"is empty bin exist?: {0 in arr}\n" ,arr)
-ax.errorbar(x[:-1],arr2[:-1],darr2[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
-             alpha=.75, fmt="None", capsize=2, capthick=1,
-             label='WOP', color='g')
+#bin
+x = np.linspace(0,l,n)
+df[f"{N}"] = x[:-1]
 
 #PDF
-range = np.linspace(0,l, 5000)
-real = np.array([prob(i,i+dx) for i in range])
-ax.plot(range,real*N, label='PDF', color='r', linestyle='dashed')
+PDF = np.array(get_real(x))*N
+df["PDF"] = PDF
 
-#Zoom
-axins = zoomed_inset_axes(ax, zoom=5, loc='right', borderpad = 1.0)
-axins.errorbar(x[:-1],arr1[:-1],darr1[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
-             alpha=.75, fmt="None", capsize=2, capthick=1,
-             label='WOS')
-axins.errorbar(x[:-1],arr2[:-1],darr2[:-1],# 0.5*dx*np.ones_like(x[:-1]), 
-             alpha=.75, fmt="None", capsize=2, capthick=1,
-             label='WOP', color='g')
-axins.plot(range,real*N, label='PDF', color='r', linestyle='dashed')
+#WOS
+WOS = sampling(get_wos,N,l,n)
+df["WOS"] = WOS[:-1]
 
-for s in ['top', 'bottom', 'left', 'right']:
-    axins.spines[s].set(color='grey', lw=1, linestyle='solid')
-x_1, x_2 = 4.5, 6.0
-axins.set(xlim=[min(x_1,x_2), max(x_1,x_2)], ylim=[min(prob(x_1,x_1+dx)*N, prob(x_2,x_2+dx)*N), max(prob(x_1,x_1+dx)*N, prob(x_2,x_2+dx)*N)])
-mark_inset(ax, axins, loc1=2, loc2=4, fc='none', ec='gray')
+#WOP
+WOP = sampling(invCDF,N,l,n)
+df["WOP"] = WOP[:-1]
 
-#plot
-ax.legend()
-ax.set(xlabel="radius", 
-       ylabel="counts[#]", 
-       title = f"charge distribution\n#N = {N}")
-plt.savefig("Figure_3.png")
+#save
+df.to_csv("output.csv", index=False)
