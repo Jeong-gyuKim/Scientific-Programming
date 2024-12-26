@@ -6,18 +6,19 @@ Date            :2024.09.25
 Author          :Jeong-gyu, Kim
 """
 
-from buffon import diffrence, LinearRegression
+from buffon import diffrence, LinearRegression, buffonWithPi, buffonWithoutPi
 import numpy as np
 import matplotlib.pyplot as plt
 
 ################################################################
 #input parameter
 l,d = 1,1
-n_list = (10**np.arange(1,5,0.1)).astype(int)
+m_list = (np.arange(4,50,1)).astype(int)#(10**np.arange(1,6,0.1)).astype(int)
+n_list = 2**m_list
 
 ################################################################
 #calculate error
-err, derr, Ns, Pi = diffrence(n_list,l,d,N=30)
+err, derr, Ns, Pi = diffrence(m_list,l,d,N=30)
 a,b = LinearRegression(np.log(n_list), np.log(err))
 
 ################################################################
@@ -40,7 +41,7 @@ plt.savefig("Figure_1.png")
 #Figure_2
 plt.figure()
 plt.scatter(np.log10(Ns), Pi, label="Buffon's needle", alpha=0.3)
-plt.plot([1,6],[np.pi,np.pi],color='r',label="Pi")
+plt.plot([min(np.log10(Ns)),max(np.log10(Ns))],[np.pi,np.pi],color='r',label="Pi")
 
 plt.title("Result of the Scientific Programming HW")
 plt.xlabel("log(# of throws)")
