@@ -10,7 +10,7 @@ venv :
 	test -d venv || python3 -m venv venv
 install: venv
 	source venv/bin/activate && pip install -r requirements.txt
-run1 : 
+run1 : install
 	mpirun -np 10 python potential.py &
-run2 : 
+run2 : install
 	python3 error.py &
